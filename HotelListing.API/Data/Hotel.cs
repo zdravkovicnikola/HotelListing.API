@@ -9,7 +9,7 @@ namespace HotelListing.API.Data
         public string Address { get; set; }
         public double Rating { get; set; }
 
-        [ForeignKey(nameof(CountryId))] // anotacija
+        [ForeignKey(nameof(CountryId))] // anotacijaa
         public int CountryId { get; set; } // ovo vidi Baza
         public Country Country { get; set; } // ovo vidi okruzenje
 
