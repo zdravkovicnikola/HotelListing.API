@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using HotelListing.API.Data;
+using HotelListing.API.Models.Country;
 
 namespace HotelListing.API.Controllers
 {
@@ -24,7 +25,18 @@ namespace HotelListing.API.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Country>>> GetCountries()
         {
+            //select * from Countries
             return await _context.Countries.ToListAsync();
+            //ovo samo po sebi vraca rezultat 201
+            //ako bismo hteli da vrati eksplicitno 200 onda bi trebalo da bude
+            // return Ok(await _context.Countries.ToListAsync()); -- to Ok()mu obezbedjuje 200 respnse
+
+            // jos jedan mozda pregledniji nacin (u principu ista stvar)
+            /*
+            var countries = await _context.Countries.ToListAsync();
+            return Ok(countries);
+            */
+
         }
 
         // GET: api/Countries/5
@@ -48,7 +60,7 @@ namespace HotelListing.API.Controllers
         {
             if (id != country.Id)
             {
-                return BadRequest();
+                return BadRequest("Invalid record Id!");
             }
 
             _context.Entry(country).State = EntityState.Modified;
@@ -75,8 +87,14 @@ namespace HotelListing.API.Controllers
         // POST: api/Countries
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<Country>> PostCountry(Country country)
+        public async Task<ActionResult<Country>> PostCountry(CreateCountyDto createCountry)
         {
+            var country = new Country
+            {
+                Name = createCountry.Name,
+                ShortName = createCountry.ShortName,
+            };
+
             _context.Countries.Add(country);
             await _context.SaveChangesAsync();
 
