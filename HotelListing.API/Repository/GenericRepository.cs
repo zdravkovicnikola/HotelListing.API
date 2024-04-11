@@ -23,7 +23,7 @@ namespace HotelListing.API.Repository
         public async Task DeleteAsync(int id)
         {
             var entity = await GetAsync(id);
-            _context.Set<T>().Remove(entity);
+            _context.Set<T>().Remove(entity); // ne moze asinhrono
             await _context.SaveChangesAsync();
         }
 
@@ -47,7 +47,7 @@ namespace HotelListing.API.Repository
 
         public async Task UpdateAsync(T entity)
         {
-            _context.Update(entity);
+            _context.Update(entity); // ne moze asinhrono
             await _context.SaveChangesAsync();
         }
 
