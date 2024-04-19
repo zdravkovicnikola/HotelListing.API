@@ -79,7 +79,7 @@ namespace HotelListing.API.Controllers
             if(country == null)
                 return NotFound();
 
-            _mapper.Map(updateCountryDto, country);
+            _mapper.Map(updateCountryDto, country);// bukv country = updateCountryDto
 
             try
             {
