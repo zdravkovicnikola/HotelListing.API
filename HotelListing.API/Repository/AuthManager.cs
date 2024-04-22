@@ -15,7 +15,7 @@ namespace HotelListing.API.Repository
         private readonly IMapper _mapper;
         private readonly UserManager<ApiUser> _userManager;
         private readonly IConfiguration _configuration;
-
+        private ApiUser _user;
         public AuthManager(IMapper mapper, UserManager<ApiUser> userManager, IConfiguration configuration)
         {
             this._mapper = mapper;
@@ -25,72 +25,66 @@ namespace HotelListing.API.Repository
 
         public async Task<AuthResponseDto> Login(LoginDto loginDto)
         {
+            _user = await _userManager.FindByEmailAsync(loginDto.Email);
+            bool isValidUser = await _userManager.CheckPasswordAsync(_user, loginDto.Password);
 
-            var _user = await _userManager.FindByEmailAsync(loginDto.Email);
-            if (_user is null)
+            if (_user == null || isValidUser == false)
             {
-                return default;
+                return null;
             }
 
-            bool isValidCredentials = await _userManager.CheckPasswordAsync(_user, loginDto.Password);
-            if (!isValidCredentials)
-            {
-                return default;
-            }
-
-            var token = await GenerateToken(_user);
+            var token = await GenerateToken();
             return new AuthResponseDto
             {
                 Token = token,
                 UserId = _user.Id
             };
         }
-    
 
-    public async Task<IEnumerable<IdentityError>> Register(ApiUserDto userDto)
-    {
-        var user = _mapper.Map<ApiUser>(userDto);
-        user.UserName = userDto.Email;
-
-        var result = await _userManager.CreateAsync(user, userDto.Password);
-
-        if (result.Succeeded)
+        public async Task<IEnumerable<IdentityError>> Register(ApiUserDto userDto)
         {
-            await _userManager.AddToRoleAsync(user, "User");
+            _user = _mapper.Map<ApiUser>(userDto);
+            _user.UserName = userDto.Email;
+
+            var result = await _userManager.CreateAsync(_user, userDto.Password);
+
+            if (result.Succeeded)
+            {
+                await _userManager.AddToRoleAsync(_user, "User");
+            }
+
+            return result.Errors;
         }
 
-        return result.Errors;
-    }
+        private async Task<string> GenerateToken()
+        {
+            var securitykey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JwtSettings:Key"]));
 
-    private async Task<string> GenerateToken(ApiUser user)
-    {
-        var securitykey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JwtSettings:Key"]));
+            var credentials = new SigningCredentials(securitykey, SecurityAlgorithms.HmacSha256);
 
-        var credetials = new SigningCredentials(securitykey, SecurityAlgorithms.HmacSha256);
+            var roles = await _userManager.GetRolesAsync(_user);
+            var roleClaims = roles.Select(x => new Claim(ClaimTypes.Role, x)).ToList();
+            var userClaims = await _userManager.GetClaimsAsync(_user);
 
-        var roles = await _userManager.GetRolesAsync(user);
-
-        var roleClaims = roles.Select(x => new Claim(ClaimTypes.Role, x)).ToList();
-
-        var userClaims = await _userManager.GetClaimsAsync(user);
-
-        var claims = new List<Claim>
+            var claims = new List<Claim>
             {
-                new Claim(JwtRegisteredClaimNames.Sub,user.Email),
-                new Claim(JwtRegisteredClaimNames.Jti,Guid.NewGuid().ToString()),
-                new Claim(JwtRegisteredClaimNames.Email,user.Email),
-                new Claim("uid",user.Id),
-            }.Union(userClaims).Union(roleClaims);
+                new Claim(JwtRegisteredClaimNames.Sub, _user.Email),
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                new Claim(JwtRegisteredClaimNames.Email, _user.Email),
+                new Claim("uid", _user.Id),
+            }
+            .Union(userClaims).Union(roleClaims);
 
-        var token = new JwtSecurityToken(
-            issuer: _configuration["JwtSettings:Issuer"],
-            audience: _configuration["JwtSettings:Audience"],
-            claims: claims,
-            expires: DateTime.Now.AddMinutes(Convert.ToInt32(_configuration["JwtSettings:DurationInMinutes"])),
-            signingCredentials: credetials
-            );
-        return new JwtSecurityTokenHandler().WriteToken(token);
+            var token = new JwtSecurityToken(
+                issuer: _configuration["JwtSettings:Issuer"],
+                audience: _configuration["JwtSettings:Audience"],
+                claims: claims,
+                expires: DateTime.Now.AddMinutes(Convert.ToInt32(_configuration["JwtSettings:DurationInMinutes"])),
+                signingCredentials: credentials
+                );
+
+            return new JwtSecurityTokenHandler().WriteToken(token);
+        }
+
     }
-
-}
 }
