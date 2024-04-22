@@ -29,25 +29,19 @@ namespace HotelListing.API.Controllers
         public async Task<ActionResult> Register([FromBody] ApiUserDto apiUserDto)
         {
             _logger.LogInformation($"Registration Attempt for {apiUserDto.Email}");
-            try
-            {
-                var errors = await _authManager.Register(apiUserDto);
 
-                if (errors.Any())
-                {
-                    foreach (var error in errors)
-                    {
-                        ModelState.AddModelError(error.Code, error.Description);
-                    }
-                    return BadRequest(ModelState);
-                }
-                return Ok();
-            }
-            catch (Exception ex)
+            var errors = await _authManager.Register(apiUserDto);
+
+            if (errors.Any())
             {
-                _logger.LogError(ex, $"Something Went Wrong in the {nameof(Register)} - User Registration attempt for {apiUserDto.Email}");
-                return Problem($"Something Went Wrong in the {nameof(Register)}. Please contact support.",statusCode:500);
+                foreach (var error in errors)
+                {
+                    ModelState.AddModelError(error.Code, error.Description);
+                }
+                return BadRequest(ModelState);
             }
+            return Ok();
+
         }
 
 
@@ -61,21 +55,14 @@ namespace HotelListing.API.Controllers
         {
             _logger.LogInformation($"Login Attempt for {loginDto.Email}");
 
-            try
-            {
-                var authResponse = await _authManager.Login(loginDto);
+            var authResponse = await _authManager.Login(loginDto);
 
-                if (authResponse == null)
-                {
-                    return Unauthorized();
-                }
-                return Ok(authResponse);
-            }
-            catch (Exception ex)
+            if (authResponse == null)
             {
-                _logger.LogError(ex, $"Something Went Wrong in the {nameof(Login)} - User Registration attempt for {loginDto.Email}");
-                return Problem($"Something Went Wrong in the {nameof(Login)}. Please contact support.", statusCode: 500);
+                return Unauthorized();
             }
+            return Ok(authResponse);
+
         }
 
         // POST: api/Account/refreshtoken
