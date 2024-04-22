@@ -1,3 +1,4 @@
+using Asp.Versioning;
 using HotelListing.API.Configurations;
 using HotelListing.API.Contracts;
 using HotelListing.API.Data;
@@ -9,6 +10,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
 using System.Text;
+
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -42,6 +45,31 @@ builder.Services.AddCors(options =>
 
 builder.Services.AddAutoMapper(typeof(AutoMapperConfig));
 
+builder.Services.AddApiVersioning(options =>
+{
+    options.AssumeDefaultVersionWhenUnspecified = true;
+    options.DefaultApiVersion = new ApiVersion(1, 0);
+    options.ReportApiVersions = true;
+    options.ApiVersionReader = ApiVersionReader.Combine(
+         new QueryStringApiVersionReader("api-version"),
+         new HeaderApiVersionReader("X-Version"),
+         new MediaTypeApiVersionReader("ver")
+    );
+})
+    .AddApiExplorer(
+                    options =>
+                    {
+                        // add the versioned api explorer, which also adds IApiVersionDescriptionProvider service
+                        // note: the specified format code will format the version as "'v'major[.minor][-status]"
+                        options.GroupNameFormat = "'v'VVV";
+
+                        // note: this option is only necessary when versioning by url segment. the SubstitutionFormat
+                        // can also be used to control the format of the API version in route templates
+                        options.SubstituteApiVersionInUrl = true;
+                    });
+
+
+
 builder.Host.UseSerilog((ctx, lc) => lc.WriteTo.Console().ReadFrom.Configuration(ctx.Configuration));
 
 builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
@@ -49,10 +77,12 @@ builder.Services.AddScoped<ICountryRepository, CountriesRepository>();
 builder.Services.AddScoped<IHotelsRepository, HotelsRepository>();
 builder.Services.AddScoped<IAuthManager, AuthManager>();
 
-builder.Services.AddAuthentication(options => {
+builder.Services.AddAuthentication(options =>
+{
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme; // "Bearer"
     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-}).AddJwtBearer(options => {
+}).AddJwtBearer(options =>
+{
     options.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuerSigningKey = true,
@@ -64,6 +94,12 @@ builder.Services.AddAuthentication(options => {
         ValidAudience = builder.Configuration["JwtSettings:Audience"],
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JwtSettings:Key"]))
     };
+});
+
+builder.Services.AddResponseCaching(options =>
+{
+    options.MaximumBodySize = 1024;
+    options.UseCaseSensitivePaths= true;
 });
 
 var app = builder.Build();
@@ -82,6 +118,22 @@ app.UseSerilogRequestLogging();
 app.UseHttpsRedirection();
 
 app.UseCors("AllowAll");
+
+app.UseResponseCaching();
+
+app.Use(async (context, next) =>
+{
+    context.Response.GetTypedHeaders().CacheControl =
+        new Microsoft.Net.Http.Headers.CacheControlHeaderValue()
+        {
+            Public = true,
+            MaxAge = TimeSpan.FromSeconds(10)
+        };
+    context.Response.Headers[Microsoft.Net.Http.Headers.HeaderNames.Vary] =
+        new string[] { "Accept-Encoding" };
+
+    await next();
+});
 
 app.UseAuthentication();
 app.UseAuthorization();

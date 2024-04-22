@@ -18,15 +18,15 @@ namespace HotelListing.API.Controllers
 {
     [Route("api/v{version:apiVersion}/countries")]
     [ApiController]
-    [ApiVersion("1.0", Deprecated =true)]
-    public class CountriesController : ControllerBase
+    [ApiVersion("2.0")]
+    public class CountriesControllerV2 : ControllerBase
     {
         
         private readonly IMapper _mapper;
         private readonly ICountryRepository _countryRepository;
-        private readonly ILogger<CountriesController> _logger;
+        private readonly ILogger<CountriesControllerV2> _logger;
 
-        public CountriesController(IMapper mapper, ICountryRepository countryRepository, ILogger<CountriesController> logger)
+        public CountriesControllerV2(IMapper mapper, ICountryRepository countryRepository, ILogger<CountriesControllerV2> logger)
         {
             this._mapper = mapper;
             this._countryRepository = countryRepository;
@@ -37,15 +37,6 @@ namespace HotelListing.API.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<GetCountryDto>>> GetCountries()
         {
-            //select * from Countries
-            //return await _context.Countries.ToListAsync();
-
-
-            //ovo samo po sebi vraca rezultat 201
-            //ako bismo hteli da vrati eksplicitno 200 onda bi trebalo da bude
-            // return Ok(await _context.Countries.ToListAsync()); -- to Ok()mu obezbedjuje 200 respnse
-
-            // jos jedan mozda pregledniji nacin (u principu ista stvar)
 
             var countries = await _countryRepository.GetAllAsync();
             var records = _mapper.Map<List<GetCountryDto>>(countries);

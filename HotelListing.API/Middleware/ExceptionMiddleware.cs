@@ -8,7 +8,7 @@ namespace HotelListing.API.Middleware
 {
     public class ExceptionMiddleware
     {
-        private readonly RequestDelegate _next;
+        private readonly RequestDelegate _next; //sledeći middleware u HTTP zahtevnom lancu.
         private readonly ILogger<ExceptionMiddleware> _logger;
 
         public ExceptionMiddleware(RequestDelegate next, ILogger<ExceptionMiddleware> logger)
