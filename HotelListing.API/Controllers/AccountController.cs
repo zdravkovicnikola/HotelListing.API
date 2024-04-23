@@ -12,9 +12,9 @@ namespace HotelListing.API.Controllers
     public class AccountController : ControllerBase
     {
         private readonly IAuthManager _authManager;
-        private readonly ILogger _logger;
+        private readonly ILogger<AccountController> _logger;
 
-        public AccountController(IAuthManager authManager, ILogger logger)
+        public AccountController(IAuthManager authManager, ILogger<AccountController> logger)
         {
             this._authManager = authManager;
             this._logger = logger;
