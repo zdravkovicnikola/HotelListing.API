@@ -1,12 +1,12 @@
 ﻿using HotelListing.API.Data;
 using HotelListingAPI.Core.Models;
+using HotelListingAPI.Core.Models.Country;
 
 namespace HotelListingAPI.Core.Contracts
 {
     public interface ICountryRepository : IGenericRepository<Country>
     {
-        Task<Country> GetDetails(int id);
-        Task<PagedResult<TResult>> GetAllAsync<TResult>(QueryParameters queryParameters);
+        Task<CountryDto> GetDetails(int id);
 
     }
 }

@@ -42,9 +42,16 @@ namespace HotelListing.API.Controllers
 
             // jos jedan mozda pregledniji nacin (u principu ista stvar)
 
+
+            //kod
+            /* 
             var countries = await _countryRepository.GetAllAsync();
             var records = _mapper.Map<List<GetCountryDto>>(countries);
             return Ok(records);
+            */
+
+            var countries = await _countryRepository.GetAllAsync<GetCountryDto>();
+            return Ok(countries);
         }
 
 
@@ -61,13 +68,7 @@ namespace HotelListing.API.Controllers
         public async Task<ActionResult<CountryDto>> GetCountry(int id)
         {
             var country = await _countryRepository.GetDetails(id);
-
-            if (country == null)
-            {
-                throw new NotFoundException(nameof(GetCountry), id);
-            }
-            var record = _mapper.Map<CountryDto>(country);
-            return record;
+            return Ok(country);
         }
 
         // PUT: api/Countries/5
@@ -81,6 +82,7 @@ namespace HotelListing.API.Controllers
                 return BadRequest("Invalid record Id!");
             }
 
+            /*
             //_context.Entry(country).State = EntityState.Modified;
 
             var country = await _countryRepository.GetAsync(id);
@@ -89,10 +91,11 @@ namespace HotelListing.API.Controllers
                 throw new NotFoundException(nameof(PutCountry), id);
 
             _mapper.Map(updateCountryDto, country);// bukv country = updateCountryDto
-
+            */
+           
             try
             {
-                await _countryRepository.UpdateAsync(country);
+                await _countryRepository.UpdateAsync(id, updateCountryDto);
             }
             catch (DbUpdateConcurrencyException)
             {
@@ -113,8 +116,9 @@ namespace HotelListing.API.Controllers
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
         [Authorize]
-        public async Task<ActionResult<Country>> PostCountry(CreateCountyDto createCountryDto)
+        public async Task<ActionResult<CountryDto>> PostCountry(CreateCountyDto createCountryDto)
         {
+            /*
             //Klasicna konverzija bez automappera, okej je jer ovde imamo dva polja al da je 10-15 bio bi cim
             //var country = new Country
             //{
@@ -124,10 +128,10 @@ namespace HotelListing.API.Controllers
 
             //Konverzija AutoMapperom :O xd
             var country = _mapper.Map<Country>(createCountryDto);
-           
-            await _countryRepository.AddAsync(country);
+            */
 
-            return CreatedAtAction("GetCountry", new { id = country.Id }, country);
+            var country =  await _countryRepository.AddAsync<CreateCountyDto, GetCountryDto>(createCountryDto);
+            return CreatedAtAction(nameof(GetCountry), new { id = country.Id }, country);
         }
 
         // DELETE: api/Countries/5
@@ -135,14 +139,7 @@ namespace HotelListing.API.Controllers
         [Authorize(Roles = "Administrator")]
         public async Task<IActionResult> DeleteCountry(int id)
         {
-            var country = await _countryRepository.GetAsync(id);
-            if (country == null)
-            {
-                throw new NotFoundException(nameof(DeleteCountry), id);
-            }
-
             await _countryRepository.DeleteAsync(id);
-
             return NoContent();
         }
 
