@@ -1,19 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using HotelListing.API.Data;
-using HotelListing.API.Models.Country;
 using AutoMapper;
-using HotelListing.API.Models.Hotel;
-using HotelListing.API.Contracts;
 using Microsoft.AspNetCore.Authorization;
-using HotelListing.API.Exceptions;
 using Asp.Versioning;
-using HotelListing.API.Models;
+using HotelListingAPI.Core.Contracts;
+using HotelListingAPI.Core.Models.Country;
+using HotelListingAPI.Core.Models;
+using HotelListingAPI.Core.Exceptions;
 
 namespace HotelListing.API.Controllers
 {
